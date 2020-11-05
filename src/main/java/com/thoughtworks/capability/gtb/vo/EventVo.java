@@ -1,5 +1,6 @@
 package com.thoughtworks.capability.gtb.vo;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,14 +17,16 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonSerialize(using = EventVo.EventVoSerializer.class)
-@JsonDeserialize(using = EventVo.EventVoDeserializer.class)
+//@JsonSerialize(using = EventVo.EventVoSerializer.class)
+//@JsonDeserialize(using = EventVo.EventVoDeserializer.class)
 public class EventVo {
 
   private String id;
   private String name;
   private EventType type;
+  @JsonSerialize(using = DateSerializer.class)
   private Date time;
+  @JsonUnwrapped
   private UserVo user;
 
   public static class EventVoSerializer extends JsonSerializer<EventVo> {
@@ -63,6 +66,22 @@ public class EventVo {
         eventType = EventType.UPLOAD;
       }
       return new EventVo(id, name, eventType, new Date(time), new UserVo(userId, userName));
+    }
+  }
+
+  public static class DateSerializer extends JsonSerializer<Date> {
+    @Override
+    public void serialize(Date date, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+      gen.writeString(String.valueOf(date.getTime()));
+    }
+  }
+
+  public static class DateDeserializer extends JsonDeserializer<Date> {
+    @Override
+    public Date deserialize(JsonParser jp, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+      JsonNode node = jp.getCodec().readTree(jp);
+      long time = node.get("time").asLong();
+      return new Date(time);
     }
   }
 }
